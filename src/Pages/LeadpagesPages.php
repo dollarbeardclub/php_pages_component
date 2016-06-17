@@ -31,6 +31,12 @@ class LeadpagesPages
         $this->PagesUrl = "https://my.leadpages.net/page/v1/pages";
     }
 
+    /**
+     * Base function get call get users pages
+     * @param bool|false $cursor
+     *
+     * @return array|\GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
+     */
     public function getPages($cursor  = false)
     {
         if(!$cursor) {
@@ -62,6 +68,13 @@ class LeadpagesPages
 
     }
 
+    /**
+     * Recursive function to get all of a users pages
+     * @param array $returnResponse
+     * @param bool|false $cursor
+     *
+     * @return array|mixed
+     */
     public function getAllUserPages($returnResponse = array(), $cursor = false){
 
         //get & parse response
@@ -112,6 +125,12 @@ class LeadpagesPages
     }
 
 
+    /**
+     * Remove non published B3 pages
+     * @param $pages
+     *
+     * @return mixed
+     */
     public function stripB3NonPublished($pages)
     {
         foreach($pages['_items'] as $index => $page){
@@ -123,6 +142,13 @@ class LeadpagesPages
         return $pages;
     }
 
+    /**
+     * sort pages in alphabetical user
+     *
+     * @param $pages
+     *
+     * @return mixed
+     */
     public function sortPages($pages)
     {
         usort($pages['_items'], function($a, $b){
@@ -132,6 +158,12 @@ class LeadpagesPages
         return $pages;
     }
 
+    /**
+     * Get the url to download the page url from
+     * @param $pageId
+     *
+     * @return array|\GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
+     */
     public function getSinglePageDownloadUrl($pageId)
     {
         try{
@@ -178,7 +210,6 @@ class LeadpagesPages
 
         $response = $this->getSinglePageDownloadUrl($pageId);
         $responseArray = json_decode($response['response'], true);
-        die($responseArray['url']);
         $html = $this->client->get($responseArray['url']);
         return $html;
     }
