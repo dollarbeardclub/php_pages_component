@@ -37,23 +37,15 @@ class TestLeadpagesPagesSuccess extends PHPUnit_Framework_TestCase
 
         $parsedUrl = parse_url($responseArray['url']);
 
-
         $this->assertEquals('https', $parsedUrl['scheme']);
-        $this->assertEquals('my.leadpages.net', $parsedUrl['host']);
+        $this->assertGreaterThan(0, strpos($parsedUrl['host'], 'leadpages.co'));
 
-        //blow up path into array to ensure proper path is returned
-        $parsedPath = explode('/', $parsedUrl['path']);
-        //unset empty indexes
-        foreach($parsedPath as $index => $value){
-            if($value == ''){
-                unset($parsedPath[$index]);
-            }
-        }
+    }
 
-        $this->assertEquals('page', $parsedPath[1]);
-        $this->assertInternalType('int', (int)$parsedPath[2]);
-        $this->assertEquals('download-html', $parsedPath[3]);
-
+    public function testDownloadPageHtml()
+    {
+        $html = $this->pages->downloadPageHtml('5691563690688512');
+        echo $html;
     }
 
 }

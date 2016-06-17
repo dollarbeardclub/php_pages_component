@@ -141,7 +141,7 @@ class LeadpagesPages
               ]);
 
             $body = json_decode($response->getBody(), true);
-            $url  = $body['_meta']['pageFullHtmlDownloadUrl'];
+            $url  = $body['_meta']['publishUrl'];
             $responseText = ['url' => $url];
 
             $response       = [
@@ -158,6 +158,29 @@ class LeadpagesPages
         }
 
         return $response;
+    }
+
+    /**
+     * get url for page, then use a get request to get the html for the page
+     * TODO at sometime this should be replaced with a single call to get the html this requires to calls
+     * @param $pageId
+     *
+     * @return mixed
+     */
+    public function downloadPageHtml($pageId){
+        try {
+            if (is_null($this->login->token)) {
+                $this->login->token = $this->login->getAccessToken();
+            }
+        }catch(Exception $e){
+            echo $e->getMessage();
+        }
+
+        $response = $this->getSinglePageDownloadUrl($pageId);
+        $responseArray = json_decode($response['response'], true);
+        die($responseArray['url']);
+        $html = $this->client->get($responseArray['url']);
+        return $html;
     }
 
 }
