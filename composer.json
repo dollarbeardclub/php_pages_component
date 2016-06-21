@@ -14,7 +14,9 @@
             "email": "brandon.braner@ave81.com"
         }
     ],
-    "psr-4": {
-        "Leadpages\\Pages\\": "src/Pages/"
-    }
+    "autoload": {
+        "psr-4": {
+            "Leadpages\\Pages\\": "src/Pages/"
+        }
+    },
 }
