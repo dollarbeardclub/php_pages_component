@@ -227,4 +227,35 @@ class LeadpagesPages
         return $response;
     }
 
+
+    public function isLeadpageSplittested($pageId)
+    {
+        if (is_null($this->login->token)) {
+            $this->login->token = $this->login->getAccessToken();
+        }
+
+        try{
+            $response = $this->client->get($this->PagesUrl.'/'.$pageId,
+              [
+                'headers' => ['LP-Security-Token' => $this->login->token],
+              ]);
+
+            $body = json_decode($response->getBody(), true);
+            $isSplitTested  = $body['isSplitTestRunning'];
+
+            $response       = [
+              'code'     => '200',
+              'response' => $isSplitTested,
+              'error'    => (bool)false
+            ];
+        }catch (ClientException $e){
+            $response       = [
+              'code'     => $e->getCode(),
+              'response' => $e->getMessage(),
+              'error'    => (bool)true
+            ];
+        }
+
+        return $response;
+    }
 }

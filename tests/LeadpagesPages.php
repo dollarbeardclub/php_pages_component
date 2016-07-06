@@ -50,6 +50,23 @@ class TestLeadpagesPagesSuccess extends PHPUnit_Framework_TestCase
         $this->assertContains('This beautiful and lightning fast landing page was proudly created with Leadpages', $response['response']);
     }
 
+    /**
+     * @test
+     */
+    public function is_a_leadpages_splittested()
+    {
+        $response = $this->pages->isLeadpageSplittested($this->pageId);
+        $this->assertFalse($response['response']);
+    }
+
+    /**
+     * @test
+     */
+    public function is_a_leadpages_splittested_fail()
+    {
+        $response = $this->pages->isLeadpageSplittested('abc123');
+        $this->assertEquals('404', $response['code']);    }
+
     public function test_download_page_html_fail_bad_id()
     {
 
