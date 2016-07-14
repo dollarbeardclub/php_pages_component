@@ -1,5 +1,6 @@
 {
     "name": "brandonbraner/pages-test",
+    "description": "A package to allow you to easily integrate Leadpages pages into your PHP project",
     "require": {
         "brandonbraner/auth-test": "^1.0",
         "php": ">=5.4.0",
