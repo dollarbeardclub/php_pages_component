@@ -78,6 +78,10 @@ class LeadpagesPages
      */
     public function getAllUserPages($returnResponse = array(), $cursor = false){
 
+        if(empty($this->login->token)){
+            $this->login->getToken();
+        }
+
         //get & parse response
         $response = $this->getPages($cursor);
         $response = json_decode($response['response'], true);
