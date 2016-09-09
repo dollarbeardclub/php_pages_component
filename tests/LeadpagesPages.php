@@ -10,6 +10,8 @@ class TestLeadpagesPagesSuccess extends PHPUnit_Framework_TestCase
     public $pages;
     public $login;
     public $client;
+    public $username;
+    public $password;
 
     public function setUp(){
 
@@ -18,11 +20,15 @@ class TestLeadpagesPagesSuccess extends PHPUnit_Framework_TestCase
         $this->login  = new fakeLogin($this->client);
         $this->pages  = new LeadpagesPages($this->client, $this->login);
         $this->pageId = getenv('pageId');
+        $this->username  = getenv('username');
+        $this->password  = getenv('password');
 
     }
 
     public function testGetAllPages()
     {   $startTime = microtime(true);
+        $this->login->getUser($this->username, $this->password)->parseResponse();
+
         $response = $this->pages->getAllUserPages();
         $finishTime = microtime(true);
         $totalTime = $finishTime - $startTime;
@@ -33,6 +39,8 @@ class TestLeadpagesPagesSuccess extends PHPUnit_Framework_TestCase
 
     public function testGetSinglePageDownloadUrl()
     {
+        $this->login->getUser($this->username, $this->password)->parseResponse();
+
         $response = $this->pages->getSinglePageDownloadUrl($this->pageId);
         $responseArray = json_decode($response['response'], true);
 
@@ -45,6 +53,8 @@ class TestLeadpagesPagesSuccess extends PHPUnit_Framework_TestCase
 
     public function testDownloadPageHtml()
     {
+        $this->login->getUser($this->username, $this->password)->parseResponse();
+
         $response = $this->pages->downloadPageHtml($this->pageId);
         $this->assertEquals('200', $response['code']);
         $this->assertContains('This beautiful and lightning fast landing page was proudly created with Leadpages', $response['response']);
@@ -55,6 +65,8 @@ class TestLeadpagesPagesSuccess extends PHPUnit_Framework_TestCase
      */
     public function is_a_leadpages_splittested()
     {
+        $this->login->getUser($this->username, $this->password)->parseResponse();
+
         $response = $this->pages->isLeadpageSplittested($this->pageId);
         $this->assertFalse($response['response']);
     }
@@ -64,11 +76,14 @@ class TestLeadpagesPagesSuccess extends PHPUnit_Framework_TestCase
      */
     public function is_a_leadpages_splittested_fail()
     {
+        $this->login->getUser($this->username, $this->password)->parseResponse();
+
         $response = $this->pages->isLeadpageSplittested('abc123');
-        $this->assertEquals('404', $response['code']);    }
+        $this->assertEquals('500', $response['code']);    }
 
     public function test_download_page_html_fail_bad_id()
     {
+        $this->login->getUser($this->username, $this->password)->parseResponse();
 
         $response = $this->pages->downloadPageHtml('badid');
 
@@ -78,7 +93,7 @@ class TestLeadpagesPagesSuccess extends PHPUnit_Framework_TestCase
 
     public function test_download_page_html_fail_no_token()
     {
-        $this->login->token = NULL;
+        $this->login->token = '';
         $response = $this->pages->downloadPageHtml('badid');
         $this->assertEquals('0', $response['code']);
         $this->assertTrue($response['error']);

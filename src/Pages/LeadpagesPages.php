@@ -5,6 +5,7 @@ namespace Leadpages\Pages;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ServerException;
 use Leadpages\Auth\LeadpagesLogin;
 use GuzzleHttp\Exception\ClientException;
 
@@ -58,6 +59,12 @@ class LeadpagesPages
               'error'    => (bool)false
             ];
         }catch (ClientException $e){
+            $response       = [
+              'code'     => $e->getCode(),
+              'response' => $e->getMessage(),
+              'error'    => (bool)true
+            ];
+        }catch(ServerException $e){
             $response       = [
               'code'     => $e->getCode(),
               'response' => $e->getMessage(),
@@ -193,6 +200,12 @@ class LeadpagesPages
               'response' => $e->getMessage(),
               'error'    => (bool)true
             ];
+        }catch (ServerException $e){
+            $response       = [
+              'code'     => $e->getCode(),
+              'response' => $e->getMessage(),
+              'error'    => (bool)true
+            ];
         }
 
         return $response;
@@ -208,7 +221,7 @@ class LeadpagesPages
     public function downloadPageHtml($pageId){
 
         if (is_null($this->login->token)) {
-            $this->login->token = $this->login->getAccessToken();
+            $this->login->token = $this->login->getToken();
         }
 
         $response = $this->getSinglePageDownloadUrl($pageId);
@@ -226,6 +239,12 @@ class LeadpagesPages
               'response' => $e->getMessage(),
               'error'    => (bool)true
             ];
+        }catch(ServerException $e){
+            $response       = [
+              'code'     => $e->getCode(),
+              'response' => $e->getMessage(),
+              'error'    => (bool)true
+            ];
         }
 
         return $response;
@@ -235,7 +254,7 @@ class LeadpagesPages
     public function isLeadpageSplittested($pageId)
     {
         if (is_null($this->login->token)) {
-            $this->login->token = $this->login->getAccessToken();
+            $this->login->token = $this->login->getToken();
         }
 
         try{
@@ -253,6 +272,12 @@ class LeadpagesPages
               'error'    => (bool)false
             ];
         }catch (ClientException $e){
+            $response       = [
+              'code'     => $e->getCode(),
+              'response' => $e->getMessage(),
+              'error'    => (bool)true
+            ];
+        }catch (ServerException $e){
             $response       = [
               'code'     => $e->getCode(),
               'response' => $e->getMessage(),

@@ -14,14 +14,15 @@ use Leadpages\Auth\LeadpagesLogin;
 
 class fakeLogin extends LeadpagesLogin
 {
-
     /**
      * act as our database
      * @var array
      */
     public $datastore = [];
+    public $leadpagesLogin;
     public $username;
     public $password;
+    public $token;
 
 
     public function __construct(Client $client)
@@ -29,7 +30,6 @@ class fakeLogin extends LeadpagesLogin
         $this->client   = $client;
         $this->username = getenv('username');
         $this->password = getenv('password');
-        $this->token    = getenv('testToken');
     }
 
 
@@ -67,19 +67,11 @@ class fakeLogin extends LeadpagesLogin
      *
      * @return mixed
      */
-
-    public function getAccessToken()
-    {
-        if(!isset($this->datastore['token'])){
-            $this->datastore['token'] = getenv('testToken');
-        }
-        return $this->datastore['token'];
-    }
     public function checkIfTokenIsEmpty()
     {
-        if(!isset($this->datastore['token'])){
+        if (!isset($this->datastore['token'])) {
             return false;
-        }else{
+        } else {
             return true;
         }
     }

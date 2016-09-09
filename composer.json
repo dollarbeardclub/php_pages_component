@@ -1,8 +1,9 @@
 {
     "name": "brandonbraner/pages-test",
     "description": "A package to allow you to easily integrate Leadpages pages into your PHP project",
+    "license": "MIT",
     "require": {
-        "brandonbraner/auth-test": "^1.0",
+        "leadpages/leadpages-auth": "*",
         "php": ">=5.4.0",
         "guzzlehttp/guzzle": "~5 < 6"
     },
