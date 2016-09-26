@@ -86,16 +86,25 @@ class TestLeadpagesPagesSuccess extends PHPUnit_Framework_TestCase
         $this->login->getUser($this->username, $this->password)->parseResponse();
 
         $response = $this->pages->downloadPageHtml('badid');
-
-        $this->assertEquals('0', $response['code']);
+        $this->assertEquals('500', $response['code']);
         $this->assertTrue($response['error']);
     }
 
+
+    public function test_download_page_html_fail_numeric_id()
+    {
+        //this would happen if a page had been deleted from the Leadpages Admin
+        $this->login->getUser($this->username, $this->password)->parseResponse();
+
+        $response = $this->pages->downloadPageHtml('5683582030839808');
+        $this->assertEquals('404', $response['code']);
+        $this->assertTrue($response['error']);
+    }
     public function test_download_page_html_fail_no_token()
     {
         $this->login->token = '';
         $response = $this->pages->downloadPageHtml('badid');
-        $this->assertEquals('0', $response['code']);
+        $this->assertEquals('401', $response['code']);
         $this->assertTrue($response['error']);
     }
 

@@ -195,11 +195,25 @@ class LeadpagesPages
               'error'    => (bool)false
             ];
         }catch (ClientException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
+            $httpResponse =  $e->getResponse();
+            //404 means their Leadpage in their account probably got deleted
+            if($httpResponse->getStatusCode() == 404){
+                $response       = [
+                  'code'     => $httpResponse->getStatusCode(),
+                  'response' => "Your Leadpage could not be found! Please make sure it is published in your Leadpages Account <br />
+                    <br />
+                    Support Info:<br />
+                    <strong>Page id:</strong> {$pageId} <br />
+                    <strong>Page url:</strong> {$this->PagesUrl}/{$pageId}",
+                  'error'    => (bool)true
+                ];
+            }else {
+                $response = [
+                  'code'     => $e->getCode(),
+                  'response' => "Something went wrong, please contact Leadpages support.",
+                  'error'    => (bool)true
+                ];
+            }
         }catch (ServerException $e){
             $response       = [
               'code'     => $e->getCode(),
@@ -225,6 +239,11 @@ class LeadpagesPages
         }
 
         $response = $this->getSinglePageDownloadUrl($pageId);
+
+        if($response['error']){
+            return $response;
+        }
+
         $responseArray = json_decode($response['response'], true);
 
         try{
@@ -264,7 +283,7 @@ class LeadpagesPages
               ]);
 
             $body = json_decode($response->getBody(), true);
-            $isSplitTested  = $body['isSplitTestRunning'];
+            $isSplitTested  = $body['isSplit'];
 
             $response       = [
               'code'     => '200',
