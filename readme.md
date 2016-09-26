@@ -1,5 +1,4 @@
-[![Build Status](https://travis-ci.org/blbraner1234/lpauth.svg?branch=master)](https://travis-ci.org/blbraner1234/lpauth)
-
+[![Build Status](https://travis-ci.org/LeadPages/php_pages_component.svg?branch=master)](https://travis-ci.org/LeadPages/php_pages_component)
 
 ## Synopsis
 
