@@ -4,9 +4,10 @@
 namespace Leadpages\Pages;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
 use Leadpages\Auth\LeadpagesLogin;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ConnectException;
 
 class LeadpagesPages
 {
@@ -40,10 +41,9 @@ class LeadpagesPages
      */
     public function getPages($cursor  = false)
     {
-        if(!$cursor) {
-            $queryArray = [];
-        }else{
-            $queryArray = ['cursor' => $cursor];
+        $queryArray = ['pageSize' => '100'];
+        if($cursor) {
+            $queryArray['cursor'] = $cursor;
         }
 
         try{
@@ -58,11 +58,14 @@ class LeadpagesPages
               'error'    => (bool)false
             ];
         }catch (ClientException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
+            $response = $this->parseException($e);
+
+        }catch (ConnectException $e){
+            $message = 'Can not connect to Leadpages Server:';
+            $response = $this->parseException($e, $message);
+        }catch (RequestException $e) {
+            $response = $this->parseException($e);
+
         }
 
         return $response;
@@ -184,11 +187,12 @@ class LeadpagesPages
               'error'    => (bool)false
             ];
         }catch (ClientException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
+            $response = $this->parseException($e);
+        }catch (ConnectException $e){
+            $message = 'Can not connect to Leadpages Server:';
+            $response = $this->parseException($e, $message);
+        }catch (RequestException $e) {
+            $response = $this->parseException($e);
         }
 
         return $response;
@@ -216,14 +220,32 @@ class LeadpagesPages
                 'code' => 200,
                 'response' => $html->getBody()->getContents()
             ];
+        }catch (ClientException $e){
+            $response = $this->parseException($e);
         }catch(RequestException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
+            $response = $this->parseException($e);
+        }catch (ConnectException $e){
+            $message = 'Can not connect to Leadpages Server:';
+            $response = $this->parseException($e, $message);
         }
 
+        return $response;
+    }
+
+    /**
+     * @param $e
+     *
+     * @param string $message
+     *
+     * @return array
+     */
+    public function parseException($e, $message = '')
+    {
+        $response = [
+          'code'     => $e->getCode(),
+          'response' => $message . ' ' . $e->getMessage(),
+          'error'    => (bool)true
+        ];
         return $response;
     }
 
