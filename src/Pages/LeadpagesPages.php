@@ -4,10 +4,11 @@
 namespace Leadpages\Pages;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ServerException;
 use Leadpages\Auth\LeadpagesLogin;
-use GuzzleHttp\Exception\ClientException;
 
 class LeadpagesPages
 {
@@ -28,48 +29,49 @@ class LeadpagesPages
     public function __construct(Client $client, LeadpagesLogin $login)
     {
 
-        $this->client = $client;
-        $this->login = $login;
+        $this->client   = $client;
+        $this->login    = $login;
         $this->PagesUrl = "https://my.leadpages.net/page/v1/pages";
     }
 
     /**
      * Base function get call get users pages
+     *
      * @param bool|false $cursor
      *
      * @return array|\GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
      */
-    public function getPages($cursor  = false)
+    public function getPages($cursor = false)
     {
-        if(!$cursor) {
-            $queryArray = [];
-        }else{
-            $queryArray = ['cursor' => $cursor];
+        $queryArray = ['pageSize' => '100'];
+        if ($cursor) {
+            $queryArray['cursor'] = $cursor;
         }
 
-        try{
+        try {
             $response = $this->client->get($this->PagesUrl,
               [
                 'headers' => ['LP-Security-Token' => $this->login->token],
-                'query' => $queryArray
+                'query'   => $queryArray
               ]);
-            $response       = [
+            $response = [
               'code'     => '200',
               'response' => $response->getBody(),
               'error'    => (bool)false
             ];
-        }catch (ClientException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
-        }catch(ServerException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
+        } catch (ClientException $e) {
+            $response = $this->parseException($e);
+
+        } catch (ServerException $e) {
+            $response = $this->parseException($e);
+
+        } catch (ConnectException $e) {
+            $message  = 'Can not connect to Leadpages Server:';
+            $response = $this->parseException($e, $message);
+        } catch (RequestException $e) {
+            $response = $this->parseException($e);
+
+
         }
 
         return $response;
@@ -78,14 +80,16 @@ class LeadpagesPages
 
     /**
      * Recursive function to get all of a users pages
+     *
      * @param array $returnResponse
      * @param bool|false $cursor
      *
      * @return array|mixed
      */
-    public function getAllUserPages($returnResponse = array(), $cursor = false){
+    public function getAllUserPages($returnResponse = array(), $cursor = false)
+    {
 
-        if(empty($this->login->token)){
+        if (empty($this->login->token)) {
             $this->login->getToken();
         }
 
@@ -93,15 +97,15 @@ class LeadpagesPages
         $response = $this->getPages($cursor);
         $response = json_decode($response['response'], true);
 
-        if(empty($response['_items'])){
-            echo'<p><strong>You appear to have no Leadpages created yet.</strong></p>';
+        if (empty($response['_items'])) {
+            echo '<p><strong>You appear to have no Leadpages created yet.</strong></p>';
             echo '<p> Please login to <a href="https://my.leadpages.net" target="_blank">Leadpages</a> and create a Leadpage to continue.</p>';
             die();
         }
 
         //if we have more pages add these pages to returnResponse and pass it back into this method
         //to run again
-        if($response['_meta']['hasMore'] == true){
+        if ($response['_meta']['hasMore'] == true) {
             $returnResponse[] = $response['_items'];
             return $this->getAllUserPages($returnResponse, $response['_meta']['nextCursor']);
         }
@@ -139,14 +143,15 @@ class LeadpagesPages
 
     /**
      * Remove non published B3 pages
+     *
      * @param $pages
      *
      * @return mixed
      */
     public function stripB3NonPublished($pages)
     {
-        foreach($pages['_items'] as $index => $page){
-            if($page['isBuilderThreePage'] && !$page['isBuilderThreePublished']){
+        foreach ($pages['_items'] as $index => $page) {
+            if ($page['isBuilderThreePage'] && !$page['isBuilderThreePublished']) {
                 unset($pages['_items'][$index]);
             }
         }
@@ -163,7 +168,7 @@ class LeadpagesPages
      */
     public function sortPages($pages)
     {
-        usort($pages['_items'], function($a, $b){
+        usort($pages['_items'], function ($a, $b) {
             //need to convert them to lowercase strings for equal comparison
             return strcmp(strtolower($a["name"]), strtolower($b["name"]));
         });
@@ -173,32 +178,33 @@ class LeadpagesPages
 
     /**
      * Get the url to download the page url from
+     *
      * @param $pageId
      *
      * @return array|\GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
      */
     public function getSinglePageDownloadUrl($pageId)
     {
-        try{
-            $response = $this->client->get($this->PagesUrl.'/'.$pageId,
+        try {
+            $response = $this->client->get($this->PagesUrl . '/' . $pageId,
               [
                 'headers' => ['LP-Security-Token' => $this->login->token],
               ]);
 
-            $body = json_decode($response->getBody(), true);
-            $url  = $body['_meta']['publishUrl'];
+            $body         = json_decode($response->getBody(), true);
+            $url          = $body['_meta']['publishUrl'];
             $responseText = ['url' => $url];
 
-            $response       = [
+            $response = [
               'code'     => '200',
               'response' => json_encode($responseText),
               'error'    => (bool)false
             ];
-        }catch (ClientException $e){
-            $httpResponse =  $e->getResponse();
+        } catch (ClientException $e) {
+            $httpResponse = $e->getResponse();
             //404 means their Leadpage in their account probably got deleted
-            if($httpResponse->getStatusCode() == 404){
-                $response       = [
+            if ($httpResponse->getStatusCode() == 404) {
+                $response = [
                   'code'     => $httpResponse->getStatusCode(),
                   'response' => "Your Leadpage could not be found! Please make sure it is published in your Leadpages Account <br />
                     <br />
@@ -207,19 +213,17 @@ class LeadpagesPages
                     <strong>Page url:</strong> {$this->PagesUrl}/{$pageId}",
                   'error'    => (bool)true
                 ];
-            }else {
-                $response = [
-                  'code'     => $e->getCode(),
-                  'response' => "Something went wrong, please contact Leadpages support.",
-                  'error'    => (bool)true
-                ];
+            } else {
+                $message  = 'Something went wrong, please contact Leadpages support.';
+                $response = $this->parseException($e);
             }
-        }catch (ServerException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
+        } catch (ServerException $e) {
+            $response = $this->parseException($e);
+        } catch (ConnectException $e) {
+            $message  = 'Can not connect to Leadpages Server:';
+            $response = $this->parseException($e, $message);
+        } catch (RequestException $e) {
+            $response = $this->parseException($e);
         }
 
         return $response;
@@ -228,11 +232,13 @@ class LeadpagesPages
     /**
      * get url for page, then use a get request to get the html for the page
      * TODO at sometime this should be replaced with a single call to get the html this requires to calls
+     *
      * @param $pageId Leadpages Page id not wordpress post_id
      *
      * @return mixed
      */
-    public function downloadPageHtml($pageId){
+    public function downloadPageHtml($pageId)
+    {
 
         if (is_null($this->login->token)) {
             $this->login->token = $this->login->getToken();
@@ -240,30 +246,27 @@ class LeadpagesPages
 
         $response = $this->getSinglePageDownloadUrl($pageId);
 
-        if($response['error']){
+        if ($response['error']) {
             return $response;
         }
 
         $responseArray = json_decode($response['response'], true);
 
-        try{
-            $html = $this->client->get($responseArray['url']);
-            $response =[
-                'code' => 200,
-                'response' => $html->getBody()->getContents()
+        try {
+            $html     = $this->client->get($responseArray['url']);
+            $response = [
+              'code'     => 200,
+              'response' => $html->getBody()->getContents()
             ];
-        }catch(RequestException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
-        }catch(ServerException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
+        } catch (ClientException $e) {
+            $response = $this->parseException($e);
+        } catch (RequestException $e) {
+            $response = $this->parseException($e);
+        } catch (ServerException $e) {
+            $response = $this->parseException($e);
+        } catch (ConnectException $e) {
+            $message  = 'Can not connect to Leadpages Server:';
+            $response = $this->parseException($e, $message);
         }
 
         return $response;
@@ -276,34 +279,44 @@ class LeadpagesPages
             $this->login->token = $this->login->getToken();
         }
 
-        try{
-            $response = $this->client->get($this->PagesUrl.'/'.$pageId,
+        try {
+            $response = $this->client->get($this->PagesUrl . '/' . $pageId,
               [
                 'headers' => ['LP-Security-Token' => $this->login->token],
               ]);
 
-            $body = json_decode($response->getBody(), true);
-            $isSplitTested  = $body['isSplit'];
+            $body          = json_decode($response->getBody(), true);
+            $isSplitTested = $body['isSplit'];
 
-            $response       = [
+            $response = [
               'code'     => '200',
               'response' => $isSplitTested,
               'error'    => (bool)false
             ];
-        }catch (ClientException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
-        }catch (ServerException $e){
-            $response       = [
-              'code'     => $e->getCode(),
-              'response' => $e->getMessage(),
-              'error'    => (bool)true
-            ];
+        } catch (ClientException $e) {
+            $response = $this->parseException($e);
+        } catch (ServerException $e) {
+            $response = $this->parseException($e);
         }
 
         return $response;
     }
+
+    /**
+     * @param $e
+     *
+     * @param string $message
+     *
+     * @return array
+     */
+    public function parseException($e, $message = '')
+    {
+        $response = [
+          'code'     => $e->getCode(),
+          'response' => $message . ' ' . $e->getMessage(),
+          'error'    => (bool)true
+        ];
+        return $response;
+    }
+
 }
