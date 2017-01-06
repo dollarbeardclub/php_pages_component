@@ -4,6 +4,8 @@
 namespace Leadpages\Pages;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Cookie\SetCookie;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
@@ -251,13 +253,21 @@ class LeadpagesPages
         }
 
         $responseArray = json_decode($response['response'], true);
-
+        $options = [];
+        foreach($_COOKIE as $index => $value){
+            if(strpos($index, 'splitTestV2URI') !== False){
+               $options['cookies'] = [$index => $value];
+            }
+        }
         try {
-            $html     = $this->client->get($responseArray['url']);
+            $html     = $this->client->get($responseArray['url'], $options);
             $response = [
               'code'     => 200,
-              'response' => $html->getBody()->getContents()
+              'response' => $html->getBody()->getContents(),
             ];
+            if(count($this->getPageSplitTestCookie($html)) > 0){
+                $response['splitTestCookie'] = $this->getPageSplitTestCookie($html);
+            }
         } catch (ClientException $e) {
             $response = $this->parseException($e);
         } catch (RequestException $e) {
@@ -272,7 +282,37 @@ class LeadpagesPages
         return $response;
     }
 
+    /**
+     * Get cookies from response and find the splittest cookie
+     * return an array containing that cookie
+     * @param $response
+     * @return array
+     */
+    public function getPageSplitTestCookie($response)
+    {
+        $cookieArray = [];
+        $cookies =  SetCookie::fromString($response->getHeader('Set-Cookie'))->toArray();
+        //If cookies is an array(multiple cookies, find the cookie we are looking for.
+        if(isset($cookies[0])){
+            foreach($cookies as $cookie){
+                if(strpos($cookie['Name'], 'splitTest')){
+                    $cookieArray = $cookie;
+                }
+            }
 
+        }
+        //Look at base cookies array as it is not multidimensional
+        if(strpos($cookies['Name'], 'splitTest') !== False){
+            $cookieArray = $cookies;
+        }
+
+        return $cookieArray;
+    }
+
+    /**
+     * @param $pageId
+     * @return array|\GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
+     */
     public function isLeadpageSplittested($pageId)
     {
         if (is_null($this->login->token)) {
