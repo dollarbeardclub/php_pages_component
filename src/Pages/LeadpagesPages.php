@@ -31,8 +31,8 @@ class LeadpagesPages
     public function __construct(Client $client, LeadpagesLogin $login)
     {
 
-        $this->client   = $client;
-        $this->login    = $login;
+        $this->client = $client;
+        $this->login = $login;
         $this->PagesUrl = "https://my.leadpages.net/page/v1/pages";
     }
 
@@ -52,14 +52,15 @@ class LeadpagesPages
 
         try {
             $response = $this->client->get($this->PagesUrl,
-              [
-                'headers' => ['LP-Security-Token' => $this->login->token],
-                'query'   => $queryArray
-              ]);
+                [
+                    'headers' => ['LP-Security-Token' => $this->login->token],
+                    'verify' => false,
+                    'query' => $queryArray
+                ]);
             $response = [
-              'code'     => '200',
-              'response' => $response->getBody(),
-              'error'    => (bool)false
+                'code' => '200',
+                'response' => $response->getBody(),
+                'error' => (bool)false
             ];
         } catch (ClientException $e) {
             $response = $this->parseException($e);
@@ -68,7 +69,7 @@ class LeadpagesPages
             $response = $this->parseException($e);
 
         } catch (ConnectException $e) {
-            $message  = 'Can not connect to Leadpages Server:';
+            $message = 'Can not connect to Leadpages Server:';
             $response = $this->parseException($e, $message);
         } catch (RequestException $e) {
             $response = $this->parseException($e);
@@ -127,7 +128,7 @@ class LeadpagesPages
 
             if (isset($returnResponse) && sizeof($returnResponse) > 0) {
                 $pages = array(
-                  '_items' => array()
+                    '_items' => array()
                 );
                 foreach ($returnResponse as $subarray) {
                     $pages['_items'] = array_merge($pages['_items'], $subarray);
@@ -189,40 +190,41 @@ class LeadpagesPages
     {
         try {
             $response = $this->client->get($this->PagesUrl . '/' . $pageId,
-              [
-                'headers' => ['LP-Security-Token' => $this->login->token],
-              ]);
+                [
+                    'headers' => ['LP-Security-Token' => $this->login->token],
+                    'verify' => false,
+                ]);
 
-            $body         = json_decode($response->getBody(), true);
-            $url          = $body['_meta']['publishUrl'];
+            $body = json_decode($response->getBody(), true);
+            $url = $body['_meta']['publishUrl'];
             $responseText = ['url' => $url];
 
             $response = [
-              'code'     => '200',
-              'response' => json_encode($responseText),
-              'error'    => (bool)false
+                'code' => '200',
+                'response' => json_encode($responseText),
+                'error' => (bool)false
             ];
         } catch (ClientException $e) {
             $httpResponse = $e->getResponse();
             //404 means their Leadpage in their account probably got deleted
             if ($httpResponse->getStatusCode() == 404) {
                 $response = [
-                  'code'     => $httpResponse->getStatusCode(),
-                  'response' => "Your Leadpage could not be found! Please make sure it is published in your Leadpages Account <br />
+                    'code' => $httpResponse->getStatusCode(),
+                    'response' => "Your Leadpage could not be found! Please make sure it is published in your Leadpages Account <br />
                     <br />
                     Support Info:<br />
                     <strong>Page id:</strong> {$pageId} <br />
                     <strong>Page url:</strong> {$this->PagesUrl}/{$pageId}",
-                  'error'    => (bool)true
+                    'error' => (bool)true
                 ];
             } else {
-                $message  = 'Something went wrong, please contact Leadpages support.';
+                $message = 'Something went wrong, please contact Leadpages support.';
                 $response = $this->parseException($e);
             }
         } catch (ServerException $e) {
             $response = $this->parseException($e);
         } catch (ConnectException $e) {
-            $message  = 'Can not connect to Leadpages Server:';
+            $message = 'Can not connect to Leadpages Server:';
             $response = $this->parseException($e, $message);
         } catch (RequestException $e) {
             $response = $this->parseException($e);
@@ -254,18 +256,18 @@ class LeadpagesPages
 
         $responseArray = json_decode($response['response'], true);
         $options = [];
-        foreach($_COOKIE as $index => $value){
-            if(strpos($index, 'splitTestV2URI') !== False){
-               $options['cookies'] = [$index => $value];
+        foreach ($_COOKIE as $index => $value) {
+            if (strpos($index, 'splitTestV2URI') !== False) {
+                $options['cookies'] = [$index => $value];
             }
         }
         try {
-            $html     = $this->client->get($responseArray['url'], $options);
+            $html = $this->client->get($responseArray['url'], $options);
             $response = [
-              'code'     => 200,
-              'response' => $html->getBody()->getContents(),
+                'code' => 200,
+                'response' => $html->getBody()->getContents(),
             ];
-            if(count($this->getPageSplitTestCookie($html)) > 0){
+            if (count($this->getPageSplitTestCookie($html)) > 0) {
                 $response['splitTestCookie'] = $this->getPageSplitTestCookie($html);
             }
         } catch (ClientException $e) {
@@ -275,7 +277,7 @@ class LeadpagesPages
         } catch (ServerException $e) {
             $response = $this->parseException($e);
         } catch (ConnectException $e) {
-            $message  = 'Can not connect to Leadpages Server:';
+            $message = 'Can not connect to Leadpages Server:';
             $response = $this->parseException($e, $message);
         }
 
@@ -291,18 +293,18 @@ class LeadpagesPages
     public function getPageSplitTestCookie($response)
     {
         $cookieArray = [];
-        $cookies =  SetCookie::fromString($response->getHeader('Set-Cookie'))->toArray();
+        $cookies = SetCookie::fromString($response->getHeader('Set-Cookie'))->toArray();
         //If cookies is an array(multiple cookies, find the cookie we are looking for.
-        if(isset($cookies[0])){
-            foreach($cookies as $cookie){
-                if(strpos($cookie['Name'], 'splitTest')){
+        if (isset($cookies[0])) {
+            foreach ($cookies as $cookie) {
+                if (strpos($cookie['Name'], 'splitTest')) {
                     $cookieArray = $cookie;
                 }
             }
 
         }
         //Look at base cookies array as it is not multidimensional
-        if(strpos($cookies['Name'], 'splitTest') !== False){
+        if (strpos($cookies['Name'], 'splitTest') !== False) {
             $cookieArray = $cookies;
         }
 
@@ -321,17 +323,18 @@ class LeadpagesPages
 
         try {
             $response = $this->client->get($this->PagesUrl . '/' . $pageId,
-              [
-                'headers' => ['LP-Security-Token' => $this->login->token],
-              ]);
+                [
+                    'headers' => ['LP-Security-Token' => $this->login->token],
+                    'verify' => false,
+                ]);
 
-            $body          = json_decode($response->getBody(), true);
+            $body = json_decode($response->getBody(), true);
             $isSplitTested = $body['isSplit'];
 
             $response = [
-              'code'     => '200',
-              'response' => $isSplitTested,
-              'error'    => (bool)false
+                'code' => '200',
+                'response' => $isSplitTested,
+                'error' => (bool)false
             ];
         } catch (ClientException $e) {
             $response = $this->parseException($e);
@@ -352,9 +355,9 @@ class LeadpagesPages
     public function parseException($e, $message = '')
     {
         $response = [
-          'code'     => $e->getCode(),
-          'response' => $message . ' ' . $e->getMessage(),
-          'error'    => (bool)true
+            'code' => $e->getCode(),
+            'response' => $message . ' ' . $e->getMessage(),
+            'error' => (bool)true
         ];
         return $response;
     }
