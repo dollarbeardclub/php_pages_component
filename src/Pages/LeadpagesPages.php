@@ -188,6 +188,10 @@ class LeadpagesPages
      */
     public function getSinglePageDownloadUrl($pageId)
     {
+        if (empty($this->login->token)) {
+            $this->login->getToken();
+        }
+
         try {
             $response = $this->client->get($this->PagesUrl . '/' . $pageId,
                 [
@@ -202,6 +206,62 @@ class LeadpagesPages
             $response = [
                 'code' => '200',
                 'response' => json_encode($responseText),
+                'error' => (bool)false
+            ];
+        } catch (ClientException $e) {
+            $httpResponse = $e->getResponse();
+            //404 means their Leadpage in their account probably got deleted
+            if ($httpResponse->getStatusCode() == 404) {
+                $response = [
+                    'code' => $httpResponse->getStatusCode(),
+                    'response' => "Your Leadpage could not be found! Please make sure it is published in your Leadpages Account <br />
+                    <br />
+                    Support Info:<br />
+                    <strong>Page id:</strong> {$pageId} <br />
+                    <strong>Page url:</strong> {$this->PagesUrl}/{$pageId}",
+                    'error' => (bool)true
+                ];
+            } else {
+                $message = 'Something went wrong, please contact Leadpages support.';
+                $response = $this->parseException($e);
+            }
+        } catch (ServerException $e) {
+            $response = $this->parseException($e);
+        } catch (ConnectException $e) {
+            $message = 'Can not connect to Leadpages Server:';
+            $response = $this->parseException($e, $message);
+        } catch (RequestException $e) {
+            $response = $this->parseException($e);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Get the all data for page from
+     *
+     * @param $pageId
+     *
+     * @return array|\GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
+     */
+    public function getSingleUserPage($pageId)
+    {
+        if (empty($this->login->token)) {
+            $this->login->getToken();
+        }
+
+        try {
+            $response = $this->client->get($this->PagesUrl . '/' . $pageId,
+                [
+                    'headers' => ['LP-Security-Token' => $this->login->token],
+                    'verify' => false,
+                ]);
+
+            $body = json_decode($response->getBody(), true);
+
+            $response = [
+                'code' => '200',
+                '_item' => json_encode($body),
                 'error' => (bool)false
             ];
         } catch (ClientException $e) {
