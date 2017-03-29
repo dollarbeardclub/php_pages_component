@@ -101,9 +101,9 @@ class LeadpagesPages
         $response = json_decode($response['response'], true);
 
         if (empty($response['_items'])) {
-            echo '<p><strong>You appear to have no Leadpages created yet.</strong></p>';
-            echo '<p> Please login to <a href="https://my.leadpages.net" target="_blank">Leadpages</a> and create a Leadpage to continue.</p>';
-            die();
+            $html = '<p><strong>You appear to have no Leadpages created yet.</strong></p>';
+            $html .= '<p> Please login to <a href="https://my.leadpages.net" target="_blank">Leadpages</a> and create a Leadpage to continue.</p>';
+            return $html;
         }
 
         //if we have more pages add these pages to returnResponse and pass it back into this method
