@@ -38,10 +38,8 @@ class LeadpagesPages
 
     /**
      * Base function get call get users pages
-     *
-     * @param bool|false $cursor
-     *
-     * @return array|\GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
+     * @param bool $cursor
+     * @return array|\Psr\Http\Message\ResponseInterface
      */
     public function getPages($cursor = false)
     {
@@ -180,11 +178,8 @@ class LeadpagesPages
     }
 
     /**
-     * Get the url to download the page url from
-     *
      * @param $pageId
-     *
-     * @return array|\GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
+     * @return array|\Psr\Http\Message\ResponseInterface
      */
     public function getSinglePageDownloadUrl($pageId)
     {
@@ -239,10 +234,8 @@ class LeadpagesPages
 
     /**
      * Get the all data for page from
-     *
      * @param $pageId
-     *
-     * @return array|\GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
+     * @return array|\Psr\Http\Message\ResponseInterface
      */
     public function getSingleUserPage($pageId)
     {
@@ -373,7 +366,7 @@ class LeadpagesPages
 
     /**
      * @param $pageId
-     * @return array|\GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
+     * @return array|\Psr\Http\Message\ResponseInterface
      */
     public function isLeadpageSplittested($pageId)
     {
@@ -403,6 +396,86 @@ class LeadpagesPages
         }
 
         return $response;
+    }
+
+    public function validate( int $pageId, array $data ) {
+
+        if (is_null($this->login->token)) {
+            $this->login->token = $this->login->getToken();
+        }
+
+        try {
+            $url = sprintf( "%s/%s?onlyValidate=true", $this->PagesUrl, $pageId );
+            $options = [
+                'headers' => [
+                    'LP-Security-Token' => $this->login->token,
+                    'Content-Type' => 'application/json'
+                ],
+                'json' => $data,
+            ];
+            $response = $this->client->patch( $url, $options );
+            $body = json_decode($response->getBody(), true);
+
+            $response = [
+                'code' => $response->getStatusCode(),
+                'response' => ($body == 'true'),
+                'error' => (bool)false
+            ];
+        } catch (ClientException $e) {
+            $response = [
+                'code' => $response->getStatusCode(),
+                'response' => $this->parseException($e),
+                'error' => (bool)true
+            ];
+        } catch (ServerException $e) {
+            $response = [
+                'code' => $response->getStatusCode(),
+                'response' => $this->parseException($e),
+                'error' => (bool)true
+            ];
+        }
+        return $response;
+
+    }
+
+    public function update( int $pageId, array $data ) {
+
+        if (is_null($this->login->token)) {
+            $this->login->token = $this->login->getToken();
+        }
+
+        try {
+            $url = sprintf( "%s/%s", $this->PagesUrl, $pageId );
+            $options = [
+                'headers' => [
+                    'LP-Security-Token' => $this->login->token,
+                    'Content-Type' => 'application/json'
+                ],
+                'json' => $data,
+            ];
+            $response = $this->client->patch( $url, $options );
+            $body = json_decode($response->getBody(), true);
+
+            $response = [
+                'code' => $response->getStatusCode(),
+                'response' => $body,
+                'error' => (bool)false
+            ];
+        } catch (ClientException $e) {
+            $response = [
+                'code' => $response->getStatusCode(),
+                'response' => $this->parseException($e),
+                'error' => (bool)true
+            ];
+        } catch (ServerException $e) {
+            $response = [
+                'code' => $response->getStatusCode(),
+                'response' => $this->parseException($e),
+                'error' => (bool)true
+            ];
+        }
+        return $response;
+
     }
 
     /**
